@@ -1,0 +1,5 @@
+ALTER TABLE order_spend ALTER COLUMN spend TYPE NUMERIC(65,18);
+
+ALTER TABLE project_spend ALTER COLUMN spend TYPE NUMERIC(65,18);
+
+ALTER TABLE billing_account_spend ALTER COLUMN spend TYPE NUMERIC(65,18);

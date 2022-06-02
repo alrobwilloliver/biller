@@ -1,0 +1,14 @@
+syntax = "proto3";
+package org.cudo.v1;
+option go_package = "cudo/lib/grpcversion;grpcversion";
+
+service VersionService {
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+}
+
+message GetVersionRequest {}
+
+message GetVersionResponse {
+  string version = 1;
+  string build_time = 2;
+}

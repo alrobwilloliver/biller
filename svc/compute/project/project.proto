@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package org.cudo.compute.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/empty.proto";
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/CudoVentures/cudo-compute-market;project";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  host: "rest.compute.cudo.org";
+  info: {
+    title: "Cudo Compute Market";
+    version: "1.0.0";
+  };
+  schemes: HTTPS;
+};
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      post: "/v1/projects"
+      body: "project"
+    };
+  };
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/projects/{id}"
+    };
+  };
+  rpc GetProject(GetProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      get: "/v1/projects/{id}"
+    };
+  };
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
+    option (google.api.http) = {
+      get: "/v1/projects"
+    };
+  };
+  rpc UpdateProject(UpdateProjectRequest) returns (Project) {
+    option (google.api.http) = {
+      put: "/v1/projects/{project.id}"
+      body: "project"
+      additional_bindings: [
+        {
+          patch: "/v1/projects/{project.id}"
+          body: "project"
+        }
+      ]
+    };
+  }
+  rpc GetProjectSpendHistory(GetProjectSpendHistoryRequest) returns (GetProjectSpendHistoryResponse) {
+    option (google.api.http) = {
+      get: "/v1/projects/{id}/spend"
+    };
+  }
+  rpc GetProjectCurrentSpend(GetProjectCurrentSpendRequest) returns (ProjectSpend) {
+    option (google.api.http) = {
+      get: "/v1/projects/{id}/spend/current"
+    };
+  }
+}
+
+message Project {
+  string id = 1;
+  string billing_account_id = 2;
+}
+
+message CreateProjectRequest {
+  Project project = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+
+message GetProjectRequest {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message ListProjectsRequest {
+  string page_token = 1;
+  int32 page_size = 2;
+}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+  string page_token = 2;
+  int32 page_size = 3;
+}
+
+message UpdateProjectRequest {
+  Project project = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message ProjectSpend {
+  string uid = 1;
+  string project_id = 2;
+  float spend = 3;
+  google.protobuf.Timestamp start_time = 4;
+  google.protobuf.Timestamp end_time = 5;
+}
+
+message GetProjectCurrentSpendRequest{
+  string id = 1;
+}
+
+message GetProjectSpendHistoryRequest{
+  string id = 1;
+}
+
+message GetProjectSpendHistoryResponse{
+  repeated ProjectSpend project_spend_history = 1;
+}

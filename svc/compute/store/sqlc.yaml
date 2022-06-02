@@ -1,0 +1,19 @@
+version: "1"
+packages:
+  - name: "store"
+    path: "."
+    queries: "queries"
+    schema: "migrations"
+    sql_package: "pgx/v4"
+    engine: "postgresql"  
+    emit_interface: true
+    overrides:
+    - go_type:
+        import: "github.com/cockroachdb/apd/v2"
+        type: "Decimal"
+      db_type: "pg_catalog.numeric"
+    - go_type:
+        import: "github.com/cockroachdb/apd/v2"
+        type: "NullDecimal"
+      db_type: "pg_catalog.numeric"
+      nullable: true

@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package org.cudo.compute.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/empty.proto";
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/CudoVentures/cudo-compute-market;billingaccount";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  host: "rest.compute.cudo.org";
+  info: {
+    title: "Cudo Compute Market";
+    version: "1.0.0";
+  };
+  schemes: HTTPS;
+};
+
+service BillingAccountService {
+  rpc CreateBillingAccount(CreateBillingAccountRequest) returns (BillingAccount) {
+    option (google.api.http) = {
+      post: "/v1/billing-accounts"
+      body: "*"
+    };
+  };
+  rpc GetBillingAccount(GetBillingAccountRequest) returns (BillingAccount) {
+    option (google.api.http) = {
+      get: "/v1/billing-accounts/{id}"
+    };
+  };
+  rpc ListBillingAccounts(ListBillingAccountsRequest) returns (ListBillingAccountsResponse) {
+    option (google.api.http) = {
+      get: "/v1/billing-accounts"
+    };
+  };
+}
+
+message BillingAccount {
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+  google.protobuf.Timestamp create_time = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+  bool supply_enabled = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+  bool demand_enabled = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+}
+
+message CreateBillingAccountRequest {}
+
+message GetBillingAccountRequest {
+  string id = 1;
+}
+
+message ListBillingAccountsRequest {
+  string page_token = 1;
+  int32 page_size = 2;
+}
+
+message ListBillingAccountsResponse {
+  repeated BillingAccount billing_accounts = 1;
+  string page_token = 2;
+  int32 page_size = 3;
+}
