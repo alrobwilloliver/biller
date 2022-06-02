@@ -11,6 +11,9 @@ init-db:
 migrate:
 	$(migrate) up
 
+test:
+	go test ./...
+
 tools:
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.15.1
 	go install github.com/bufbuild/buf/cmd/buf@v1.3.1
