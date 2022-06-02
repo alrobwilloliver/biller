@@ -18,6 +18,14 @@ FROM "project"
 WHERE
     id = @id;
 
+-- name: FindProjectExistsById :one
+SELECT EXISTS (
+    SELECT *
+    FROM "project"
+    WHERE
+        id = @id
+);
+
 -- name: ListProjects :many
 SELECT *
 FROM "project"

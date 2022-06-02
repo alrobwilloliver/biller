@@ -51,6 +51,8 @@ type FakeTxQuerier struct {
 	createProjectError     error
 	deleteProjectInt       int64
 	deleteProjectError     error
+	exists                 bool
+	existsError            error
 	listProjects           []store.Project
 	listProjectsError      error
 	findProjectByIdError   error
@@ -81,6 +83,10 @@ func (q FakeTxQuerier) CreateProject(ctx context.Context, arg store.CreateProjec
 
 func (q FakeTxQuerier) FindProjectById(ctx context.Context, id string) (store.Project, error) {
 	return q.project, q.findProjectByIdError
+}
+
+func (q FakeTxQuerier) FindProjectExistsById(ctx context.Context, id string) (bool, error) {
+	return q.exists, q.existsError
 }
 
 func (q FakeTxQuerier) DeleteProject(ctx context.Context, id string) (int64, error) {
@@ -245,6 +251,54 @@ func Test_CreateProject(t *testing.T) {
 		}
 		if st.Code() != codes.PermissionDenied {
 			t.Errorf("expected: %s, got: %s", codes.PermissionDenied, st.Code())
+		}
+	})
+	t.Run("should fail when FindProjectExistsById query returns an error", func(t *testing.T) {
+		querier := FakeTxQuerier{}
+		querier.billingAccount = store.BillingAccount{
+			DemandEnabled: true,
+		}
+		querier.existsError = errors.New("failure to check project exists")
+		server := NewServer(querier, zaptest.NewLogger(t))
+		_, err := server.CreateProject(context.Background(), &CreateProjectRequest{
+			Project: &Project{
+				Id:               "test",
+				BillingAccountId: "valid-billing-account-id",
+			},
+		})
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Fatalf("expected a grpc error, got: %s", err.Error())
+		}
+		if st.Code() != codes.Internal {
+			t.Errorf("expected: %s, got: %s", codes.Internal, st.Code())
+		}
+	})
+	t.Run("should fail when FindProjectExistsById query returns a result", func(t *testing.T) {
+		querier := FakeTxQuerier{}
+		querier.billingAccount = store.BillingAccount{
+			DemandEnabled: true,
+		}
+		querier.exists = true
+		server := NewServer(querier, zaptest.NewLogger(t))
+		_, err := server.CreateProject(context.Background(), &CreateProjectRequest{
+			Project: &Project{
+				Id:               "test",
+				BillingAccountId: "valid-billing-account-id",
+			},
+		})
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Fatalf("expected a grpc error, got: %s", err.Error())
+		}
+		if st.Code() != codes.AlreadyExists {
+			t.Errorf("expected: %s, got: %s", codes.AlreadyExists, st.Code())
 		}
 	})
 	t.Run("should fail when CreateProject query returns an error", func(t *testing.T) {
@@ -535,30 +589,10 @@ func Test_GetProject(t *testing.T) {
 			t.Errorf("expected: %s, got: %s", codes.NotFound, st.Code())
 		}
 	})
-	t.Run("should fail when the authorization checker Check returns an error", func(t *testing.T) {
-		querier := FakeTxQuerier{}
-		server := NewServer(querier, zaptest.NewLogger(t))
-		_, err := server.GetProject(context.Background(), &GetProjectRequest{
-			Id: "test",
-		})
-		if err == nil {
-			t.Errorf("expected error, got nil")
-		}
-		st, ok := status.FromError(err)
-		if ok {
-			t.Errorf("expected a non grpc error, got: %s", err.Error())
-		}
-		if st.Code() != codes.Unknown {
-			t.Errorf("expected: %s, got: %s", codes.Unknown, st.Code())
-		}
-		if err.Error() != "failure to check authorization" {
-			t.Errorf("expected: %s, got: %s", "failure to check authorization", err.Error())
-		}
-	})
 	t.Run("should successfully return a project", func(t *testing.T) {
 		querier := FakeTxQuerier{}
 		querier.project = store.Project{
-			ID:               "project-id",
+			ID:               "test",
 			BillingAccountID: "billing-account-id",
 		}
 		server := NewServer(querier, zaptest.NewLogger(t))
@@ -595,21 +629,6 @@ func Test_ListProjects(t *testing.T) {
 		}
 		if err.Error() != "failure to begin transaction" {
 			t.Errorf("expected: %s, got: %s", "failure to begin transaction", err.Error())
-		}
-	})
-	t.Run("should fail when parsing an invalid permitted id to a uuid", func(t *testing.T) {
-		querier := FakeTxQuerier{}
-		server := NewServer(querier, zaptest.NewLogger(t))
-		_, err := server.ListProjects(context.Background(), &ListProjectsRequest{})
-		if err == nil {
-			t.Errorf("expected error, got nil")
-		}
-		st, ok := status.FromError(err)
-		if !ok {
-			t.Errorf("expected a grpc error, got: %s", err.Error())
-		}
-		if st.Code() != codes.Internal {
-			t.Errorf("expected: %s, got: %s", codes.Internal, st.Code())
 		}
 	})
 	t.Run("should fail when ListProjects query returns an error", func(t *testing.T) {
@@ -671,7 +690,7 @@ func Test_UpdateProject(t *testing.T) {
 		server := NewServer(querier, zaptest.NewLogger(t))
 		_, err := server.UpdateProject(context.Background(), &UpdateProjectRequest{
 			Project: &Project{
-				Id: "invalid-uid",
+				Id: "invalid-uid^&*",
 			},
 		})
 		if err == nil {
@@ -729,30 +748,6 @@ func Test_UpdateProject(t *testing.T) {
 		}
 		if err.Error() != "test error" {
 			t.Errorf("expected: %s, got: %s", "test error", err.Error())
-		}
-	})
-	t.Run("should fail when using the mask updating the account id is invalid", func(t *testing.T) {
-		querier := FakeTxQuerier{}
-
-		server := NewServer(querier, zaptest.NewLogger(t))
-		_, err := server.UpdateProject(context.Background(), &UpdateProjectRequest{
-			Project: &Project{
-				Id:               "f863f339-9f9c-4863-aa02-73e059060b9a",
-				BillingAccountId: "invalid-account-id",
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{
-				Paths: []string{"account_id"},
-			},
-		})
-		if err == nil {
-			t.Errorf("expected error, got nil")
-		}
-		st, ok := status.FromError(err)
-		if !ok {
-			t.Errorf("expected a grpc error, got: %s", err.Error())
-		}
-		if st.Code() != codes.InvalidArgument {
-			t.Errorf("expected: %s, got: %s", codes.InvalidArgument, st.Code())
 		}
 	})
 	t.Run("should fail when FindBillingAccountByID returns an error", func(t *testing.T) {

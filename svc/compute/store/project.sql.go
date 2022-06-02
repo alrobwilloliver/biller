@@ -57,6 +57,22 @@ func (q *Queries) FindProjectById(ctx context.Context, id string) (Project, erro
 	return i, err
 }
 
+const findProjectExistsById = `-- name: FindProjectExistsById :one
+SELECT EXISTS (
+    SELECT id, create_time, billing_account_id
+    FROM "project"
+    WHERE
+        id = $1
+)
+`
+
+func (q *Queries) FindProjectExistsById(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRow(ctx, findProjectExistsById, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const getProjectCurrentSpend = `-- name: GetProjectCurrentSpend :one
 SELECT uid, project_id, spend, start_time, end_time
 FROM "project_spend"

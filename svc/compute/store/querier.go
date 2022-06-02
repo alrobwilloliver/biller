@@ -24,6 +24,7 @@ type Querier interface {
 	FindLeaseInfoByLeaseId(ctx context.Context, id string) (FindLeaseInfoByLeaseIdRow, error)
 	FindOrderSpendForTimeRange(ctx context.Context, arg FindOrderSpendForTimeRangeParams) (OrderSpend, error)
 	FindProjectById(ctx context.Context, id string) (Project, error)
+	FindProjectExistsById(ctx context.Context, id string) (bool, error)
 	FindProjectSpendForTimeRange(ctx context.Context, arg FindProjectSpendForTimeRangeParams) (ProjectSpend, error)
 	GetProjectCurrentSpend(ctx context.Context, projectID string) (ProjectSpend, error)
 	GetProjectSpendHistory(ctx context.Context, projectID string) ([]ProjectSpend, error)

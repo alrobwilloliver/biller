@@ -54,8 +54,11 @@ func (s *server) CreateProject(ctx context.Context, req *CreateProjectRequest) (
 		return &res, err
 	}
 
-	_, err = txq.FindProjectById(ctx, req.Project.Id)
-	if err == nil {
+	exists, err := txq.FindProjectExistsById(ctx, req.Project.Id)
+	if err != nil {
+		return &res, status.Error(codes.Internal, "failed to check if project exists")
+	}
+	if exists {
 		return &res, status.Error(codes.AlreadyExists, "a project with the requested id already exists")
 	}
 
