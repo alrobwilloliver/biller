@@ -30,6 +30,7 @@ CREATE TABLE "order"
     price_hr    FLOAT                                      NOT NULL
 );
 
+
 CREATE TYPE lease_status AS ENUM ('active', 'complete', 'failed');
 
 CREATE TABLE lease
@@ -63,6 +64,8 @@ CREATE TABLE order_spend
     end_time   TIMESTAMPTZ                                NOT NULL
 );
 
+CREATE UNIQUE INDEX order_id_start_time_end_time ON order_spend(order_id, start_time, end_time);
+
 CREATE TABLE project_spend
 (
     uid        UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -73,3 +76,4 @@ CREATE TABLE project_spend
 );
 
 CREATE UNIQUE INDEX project_id_start_time_end_time ON project_spend(project_id, start_time, end_time);
+
